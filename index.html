@@ -6,8 +6,7 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0,
-    maximum-scale=1.0, user-scalable=no"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
   >
 
   <title>沉水性植物 AR 觀察</title>
@@ -15,66 +14,135 @@
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-  <!-- MindAR Image Tracking -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <!--
+    改用 MindAR 1.2.3
+    避開目前部分新版 iOS 與 1.2.5 的 WebGL 相容性問題
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+
 
   <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
     html,
     body {
       margin: 0;
       padding: 0;
+
       width: 100%;
       height: 100%;
+
       overflow: hidden;
+
+      background: #000;
+
       font-family:
         "PingFang TC",
         "Microsoft JhengHei",
         Arial,
         sans-serif;
+    }
+
+
+    /* =====================================================
+       重要：
+       強制讓手機相機畫面位於最底層並顯示
+       ===================================================== */
+
+    video {
+      position: fixed !important;
+
+      top: 0 !important;
+      left: 0 !important;
+
+      width: 100vw !important;
+      height: 100vh !important;
+
+      object-fit: cover !important;
+
+      display: block !important;
+
+      z-index: 0 !important;
+
       background: #000;
     }
 
-    /* 開始 AR 畫面 */
+
+    /* A-Frame 放在相機上面 */
+    a-scene {
+      position: fixed !important;
+
+      top: 0;
+      left: 0;
+
+      width: 100vw !important;
+      height: 100vh !important;
+
+      z-index: 1;
+
+      background: transparent !important;
+    }
+
+
+    /* 3D Canvas 必須透明，否則會把相機蓋成黑色 */
+    a-scene canvas,
+    .a-canvas {
+      background: transparent !important;
+    }
+
+
+    /* =====================================================
+       開始畫面
+       ===================================================== */
+
     #startScreen {
       position: fixed;
+
       inset: 0;
+
       z-index: 30000;
 
       display: flex;
       flex-direction: column;
+
       align-items: center;
       justify-content: center;
 
       padding: 30px;
-
-      box-sizing: border-box;
 
       background: #edf5f1;
 
       text-align: center;
     }
 
+
     #startScreen h1 {
       margin: 0 0 16px;
 
       color: #20483c;
 
-      font-size: 26px;
+      font-size: 27px;
     }
 
-    #startScreen p {
-      max-width: 420px;
 
-      margin: 0 0 24px;
+    #startScreen p {
+      max-width: 440px;
+
+      margin: 0 0 25px;
 
       color: #50665e;
 
       font-size: 16px;
+
       line-height: 1.7;
     }
 
+
     #startButton {
-      min-width: 200px;
+      min-width: 210px;
 
       padding: 15px 30px;
 
@@ -83,116 +151,146 @@
 
       background: #176b57;
 
-      color: white;
+      color: #fff;
 
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 700;
 
       cursor: pointer;
+
+      -webkit-appearance: none;
+      appearance: none;
     }
+
 
     #startButton:disabled {
       opacity: 0.55;
     }
 
+
     #errorMessage {
       display: none;
 
-      max-width: 430px;
+      width: 100%;
+      max-width: 450px;
 
       margin-top: 20px;
 
-      padding: 14px;
+      padding: 14px 16px;
 
       border-radius: 12px;
 
       background: #fff0f0;
 
-      color: #9a3030;
+      color: #8b2929;
 
       font-size: 14px;
+
       line-height: 1.6;
+
+      text-align: left;
     }
 
-    /* 上方狀態 */
+
+    /* =====================================================
+       上方狀態
+       ===================================================== */
+
     #statusBox {
       position: fixed;
 
-      top: 16px;
-      left: 50%;
-
-      transform: translateX(-50%);
-
-      width: calc(100% - 36px);
-      max-width: 520px;
-
-      padding: 12px 16px;
-
-      box-sizing: border-box;
-
-      border-radius: 14px;
-
-      background: rgba(15, 55, 46, 0.9);
-
-      color: #fff;
-
-      text-align: center;
-
-      font-size: 15px;
-      line-height: 1.5;
-
-      z-index: 10000;
-
-      display: none;
-
-      pointer-events: none;
-    }
-
-    /* 水流控制 */
-    #controlPanel {
-      position: fixed;
+      top:
+        calc(
+          14px +
+          env(safe-area-inset-top)
+        );
 
       left: 50%;
-      bottom: 20px;
 
       transform: translateX(-50%);
 
       width: calc(100% - 32px);
       max-width: 520px;
 
+      padding: 12px 16px;
+
+      z-index: 20000;
+
+      display: none;
+
+      border-radius: 14px;
+
+      background:
+        rgba(15, 55, 46, 0.9);
+
+      color: #fff;
+
+      text-align: center;
+
+      font-size: 15px;
+
+      line-height: 1.5;
+
+      pointer-events: none;
+    }
+
+
+    /* =====================================================
+       水流控制
+       ===================================================== */
+
+    #controlPanel {
+      position: fixed;
+
+      left: 50%;
+
+      bottom:
+        calc(
+          18px +
+          env(safe-area-inset-bottom)
+        );
+
+      transform: translateX(-50%);
+
+      width: calc(100% - 30px);
+      max-width: 520px;
+
       padding: 15px 18px;
 
-      box-sizing: border-box;
+      z-index: 20000;
+
+      display: none;
 
       border-radius: 18px;
 
-      background: rgba(255, 255, 255, 0.95);
+      background:
+        rgba(255, 255, 255, 0.95);
 
       box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.25);
-
-      z-index: 10000;
-
-      display: none;
+        0 4px 20px
+        rgba(0, 0, 0, 0.25);
     }
+
 
     .controlTitle {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
 
-      margin-bottom: 8px;
+      align-items: center;
+      justify-content: space-between;
+
+      margin-bottom: 9px;
 
       color: #20483c;
 
-      font-weight: bold;
       font-size: 17px;
+      font-weight: 700;
     }
+
 
     #flowValue {
       padding: 4px 10px;
 
-      border-radius: 18px;
+      border-radius: 20px;
 
       background: #e1f1e9;
 
@@ -201,48 +299,64 @@
       font-size: 14px;
     }
 
+
     #flowSlider {
       width: 100%;
+
+      height: 34px;
 
       accent-color: #16825f;
     }
 
+
     .flowLabels {
       display: flex;
+
       justify-content: space-between;
 
-      margin-top: 3px;
-
-      color: #66756f;
+      color: #65766f;
 
       font-size: 12px;
     }
 
-    .hint {
-      margin-top: 9px;
 
-      color: #5a6d65;
+    .hint {
+      margin-top: 8px;
+
+      color: #556a61;
 
       font-size: 13px;
-      line-height: 1.5;
+
+      line-height: 1.45;
     }
+
   </style>
+
 </head>
 
 
 <body>
 
-  <!-- 開始畫面 -->
+
+  <!-- =====================================================
+       開始畫面
+       ===================================================== -->
+
   <div id="startScreen">
 
-    <h1>沉水性植物 AR 觀察</h1>
+    <h1>
+      沉水性植物 AR 觀察
+    </h1>
 
     <p>
       點擊「開始 AR」後，請允許瀏覽器使用相機。
-      接著將手機鏡頭對準指定的沉水性植物圖卡。
+      接著將鏡頭對準指定的沉水性植物完整圖卡。
     </p>
 
-    <button id="startButton" disabled>
+    <button
+      id="startButton"
+      disabled
+    >
       正在載入 3D 模型…
     </button>
 
@@ -251,24 +365,35 @@
   </div>
 
 
-  <!-- 狀態 -->
+
+  <!-- =====================================================
+       狀態提示
+       ===================================================== -->
+
   <div id="statusBox">
-    正在啟動相機……
+    正在啟動 AR……
   </div>
 
 
-  <!-- 水流滑桿 -->
+
+  <!-- =====================================================
+       水流控制
+       ===================================================== -->
+
   <div id="controlPanel">
 
     <div class="controlTitle">
 
-      <span>🌊 水流強度</span>
+      <span>
+        🌊 水流強度
+      </span>
 
       <span id="flowValue">
         中等
       </span>
 
     </div>
+
 
     <input
       id="flowSlider"
@@ -279,20 +404,31 @@
       step="1"
     >
 
+
     <div class="flowLabels">
+
       <span>無水流</span>
+
       <span>中等</span>
+
       <span>強水流</span>
+
     </div>
 
+
     <div class="hint">
-      拖動滑桿，觀察沉水性植物的莖與葉如何隨水流擺動。
+      拖動滑桿，觀察水流增強時，
+      沉水性植物的莖與葉如何隨水流擺動。
     </div>
 
   </div>
 
 
-  <!-- AR Scene -->
+
+  <!-- =====================================================
+       AR Scene
+       ===================================================== -->
+
   <a-scene
 
     id="arScene"
@@ -309,18 +445,27 @@
       missTolerance: 5;
     "
 
+    embedded
+
     color-space="sRGB"
 
     renderer="
       colorManagement: true;
       physicallyCorrectLights: true;
       antialias: true;
+      alpha: true;
     "
 
     vr-mode-ui="enabled: false"
 
     device-orientation-permission-ui="enabled: false"
+
   >
+
+
+    <!-- =============================
+         Assets
+         ============================= -->
 
     <a-assets timeout="30000">
 
@@ -334,28 +479,58 @@
     </a-assets>
 
 
+
+    <!-- =============================
+         Camera
+         ============================= -->
+
     <a-camera
+
       position="0 0 0"
+
       look-controls="enabled: false"
+
+      cursor="
+        fuse: false;
+        rayOrigin: mouse;
+      "
+
     >
     </a-camera>
 
 
+
+    <!-- =============================
+         Image Target
+         ============================= -->
+
     <a-entity
+
       id="target"
-      mindar-image-target="targetIndex: 0"
+
+      mindar-image-target="
+        targetIndex: 0;
+      "
+
     >
 
       <a-gltf-model
+
         id="tankModel"
+
         src="#plantModel"
+
         position="0 0 0.12"
+
         rotation="90 0 0"
+
         scale="0.18 0.18 0.18"
+
       >
       </a-gltf-model>
 
     </a-entity>
+
 
   </a-scene>
 
@@ -365,44 +540,64 @@
 
     document.addEventListener(
       "DOMContentLoaded",
-      function () {
+      () => {
 
         const scene =
-          document.querySelector("#arScene");
-
-        const modelEl =
-          document.querySelector("#tankModel");
+          document.querySelector(
+            "#arScene"
+          );
 
         const target =
-          document.querySelector("#target");
+          document.querySelector(
+            "#target"
+          );
+
+        const modelEl =
+          document.querySelector(
+            "#tankModel"
+          );
 
         const startScreen =
-          document.querySelector("#startScreen");
+          document.querySelector(
+            "#startScreen"
+          );
 
         const startButton =
-          document.querySelector("#startButton");
+          document.querySelector(
+            "#startButton"
+          );
 
         const errorMessage =
-          document.querySelector("#errorMessage");
+          document.querySelector(
+            "#errorMessage"
+          );
 
         const statusBox =
-          document.querySelector("#statusBox");
+          document.querySelector(
+            "#statusBox"
+          );
 
         const controlPanel =
-          document.querySelector("#controlPanel");
+          document.querySelector(
+            "#controlPanel"
+          );
 
         const flowSlider =
-          document.querySelector("#flowSlider");
+          document.querySelector(
+            "#flowSlider"
+          );
 
         const flowValue =
-          document.querySelector("#flowValue");
+          document.querySelector(
+            "#flowValue"
+          );
 
 
         let arSystem = null;
 
         let modelReady = false;
 
-        let arStarted = false;
+        let arReady = false;
 
         let stemRigs = [];
 
@@ -410,18 +605,18 @@
 
         let animationFrame = null;
 
-        const startTime =
+        const animationStart =
           performance.now();
 
 
 
-        /* ==============================
-           Scene 準備完成
-           ============================== */
+        /* =================================================
+           Scene 初始化
+           ================================================= */
 
         scene.addEventListener(
           "loaded",
-          function () {
+          () => {
 
             arSystem =
               scene.systems[
@@ -433,46 +628,52 @@
 
 
 
-        /* ==============================
-           GLB 模型準備完成
-           ============================== */
+        /* =================================================
+           GLB 載入成功
+           ================================================= */
 
         modelEl.addEventListener(
           "model-loaded",
-          function () {
+          () => {
 
             modelReady = true;
 
             collectStemRigs();
 
-            startButton.disabled = false;
+            startPlantAnimation();
+
+            startButton.disabled =
+              false;
 
             startButton.textContent =
               "開始 AR";
 
-            startPlantAnimation();
-
           }
         );
 
 
+
+        /* =================================================
+           GLB 載入失敗
+           ================================================= */
 
         modelEl.addEventListener(
           "model-error",
-          function (event) {
-
-            startButton.disabled = true;
-
-            startButton.textContent =
-              "模型載入失敗";
-
-            showError(
-              "3D 模型載入失敗，請確認 submerged_plant_tank_final.glb 與 index.html 放在同一層。"
-            );
+          event => {
 
             console.error(
-              "Model error:",
+              "GLB model error:",
               event
+            );
+
+            startButton.disabled =
+              true;
+
+            startButton.textContent =
+              "3D 模型載入失敗";
+
+            showError(
+              "3D 模型無法載入。請確認 submerged_plant_tank_final.glb、targets.mind 與 index.html 都位於 GitHub Repository 的同一層。"
             );
 
           }
@@ -480,90 +681,139 @@
 
 
 
-        /* ==============================
-           點擊開始 AR
-           ============================== */
+        /* =================================================
+           開始 AR
+           ================================================= */
 
-       startButton.addEventListener(
-  "click",
-  async function () {
+        startButton.addEventListener(
+          "click",
+          () => {
 
-    errorMessage.style.display =
-      "none";
+            errorMessage.style.display =
+              "none";
 
-    startButton.disabled =
-      true;
+            startButton.disabled =
+              true;
 
-    startButton.textContent =
-      "正在開啟相機…";
+            startButton.textContent =
+              "正在啟動相機…";
 
-    try {
 
-      if (!arSystem) {
+            if (!arSystem) {
 
-        arSystem =
-          scene.systems[
-            "mindar-image-system"
-          ];
+              arSystem =
+                scene.systems[
+                  "mindar-image-system"
+                ];
 
-      }
+            }
 
-      if (!arSystem) {
 
-        throw new Error(
-          "MindAR 尚未初始化。"
+            if (!arSystem) {
+
+              startButton.disabled =
+                false;
+
+              startButton.textContent =
+                "重新嘗試";
+
+              showError(
+                "MindAR 尚未初始化完成。請重新整理頁面後再試。"
+              );
+
+              return;
+
+            }
+
+
+            statusBox.style.display =
+              "block";
+
+            statusBox.textContent =
+              "正在啟動相機……";
+
+
+            /*
+             * 使用 MindAR 官方 API
+             * 不自行重複呼叫 getUserMedia
+             */
+            try {
+
+              arSystem.start();
+
+            }
+
+            catch (error) {
+
+              console.error(
+                "MindAR start error:",
+                error
+              );
+
+              startButton.disabled =
+                false;
+
+              startButton.textContent =
+                "重新嘗試";
+
+              showError(
+                "AR 啟動失敗：" +
+                (
+                  error.message ||
+                  "未知錯誤"
+                )
+              );
+
+            }
+
+
+            /*
+             * 如果 MindAR 沒有送出 arReady，
+             * 不讓使用者只看到無限黑畫面。
+             */
+            setTimeout(
+              () => {
+
+                if (!arReady) {
+
+                  startButton.disabled =
+                    false;
+
+                  startButton.textContent =
+                    "重新嘗試";
+
+                  startScreen.style.display =
+                    "flex";
+
+                  statusBox.style.display =
+                    "none";
+
+                  showError(
+                    "相機權限已取得，但 AR 引擎沒有成功啟動。如果你使用新版 iOS，這可能是 MindAR 與 WebGL 的相容性問題。可先重新整理一次頁面；若仍失敗，請改用 Android Chrome 或其他 iPhone/iPad 測試。"
+                  );
+
+                }
+
+              },
+              10000
+            );
+
+          }
         );
 
-      }
-
-      statusBox.style.display =
-        "block";
-
-      statusBox.textContent =
-        "正在啟動 AR 相機……";
-
-      /*
-       * 直接讓 MindAR 開啟相機。
-       * 不再先用 getUserMedia 開一次又關閉。
-       */
-      await arSystem.start();
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "Camera / AR error:",
-        error
-      );
-
-      startButton.disabled =
-        false;
-
-      startButton.textContent =
-        "重新嘗試";
-
-      showError(
-        "相機無法啟動：" +
-        error.message
-      );
-
-    }
-
-  }
-);
 
 
-
-        /* ==============================
-           AR 啟動成功
-           ============================== */
+        /* =================================================
+           MindAR 已準備完成
+           ================================================= */
 
         scene.addEventListener(
           "arReady",
-          function () {
+          () => {
 
-            arStarted = true;
+            arReady = true;
+
+            forceCameraVideoVisible();
 
             startScreen.style.display =
               "none";
@@ -579,18 +829,20 @@
 
 
 
-        /* ==============================
-           AR 啟動失敗
-           ============================== */
+        /* =================================================
+           MindAR 啟動錯誤
+           ================================================= */
 
         scene.addEventListener(
           "arError",
-          function (event) {
+          event => {
 
             console.error(
               "MindAR arError:",
               event
             );
+
+            arReady = false;
 
             startScreen.style.display =
               "flex";
@@ -604,8 +856,9 @@
             statusBox.style.display =
               "none";
 
+
             showError(
-              "MindAR 無法啟動相機。請確認瀏覽器已允許相機權限。"
+              "相機權限已允許，但 MindAR 無法完成 AR 初始化。這通常不是模型問題，而是瀏覽器／WebGL 相容性問題。"
             );
 
           }
@@ -613,16 +866,146 @@
 
 
 
-        /* ==============================
+        /* =================================================
+           強制修正 iPhone 相機 video 顯示
+           ================================================= */
+
+        function forceCameraVideoVisible() {
+
+          let attempts = 0;
+
+
+          const timer =
+            setInterval(
+              () => {
+
+                attempts += 1;
+
+
+                const videos =
+                  document.querySelectorAll(
+                    "video"
+                  );
+
+
+                if (
+                  videos.length > 0
+                ) {
+
+                  videos.forEach(
+                    video => {
+
+                      video.setAttribute(
+                        "playsinline",
+                        ""
+                      );
+
+                      video.setAttribute(
+                        "webkit-playsinline",
+                        ""
+                      );
+
+                      video.setAttribute(
+                        "autoplay",
+                        ""
+                      );
+
+                      video.muted =
+                        true;
+
+
+                      video.style.position =
+                        "fixed";
+
+                      video.style.top =
+                        "0";
+
+                      video.style.left =
+                        "0";
+
+                      video.style.width =
+                        "100vw";
+
+                      video.style.height =
+                        "100vh";
+
+                      video.style.objectFit =
+                        "cover";
+
+                      video.style.display =
+                        "block";
+
+                      video.style.visibility =
+                        "visible";
+
+                      video.style.opacity =
+                        "1";
+
+                      video.style.zIndex =
+                        "0";
+
+
+                      const playPromise =
+                        video.play();
+
+
+                      if (
+                        playPromise &&
+                        typeof playPromise.catch ===
+                        "function"
+                      ) {
+
+                        playPromise.catch(
+                          error => {
+
+                            console.warn(
+                              "Camera video play:",
+                              error
+                            );
+
+                          }
+                        );
+
+                      }
+
+                    }
+                  );
+
+                }
+
+
+                /*
+                 * 約數秒後停止重複設定
+                 */
+                if (
+                  attempts >= 20
+                ) {
+
+                  clearInterval(
+                    timer
+                  );
+
+                }
+
+              },
+              250
+            );
+
+        }
+
+
+
+        /* =================================================
            找到圖卡
-           ============================== */
+           ================================================= */
 
         target.addEventListener(
           "targetFound",
-          function () {
+          () => {
 
             statusBox.textContent =
               "✅ 已辨識圖卡！請觀察沉水性植物。";
+
 
             if (modelReady) {
 
@@ -636,13 +1019,13 @@
 
 
 
-        /* ==============================
-           圖卡離開畫面
-           ============================== */
+        /* =================================================
+           圖卡離開鏡頭
+           ================================================= */
 
         target.addEventListener(
           "targetLost",
-          function () {
+          () => {
 
             statusBox.textContent =
               "請將鏡頭重新對準完整圖卡。";
@@ -655,9 +1038,9 @@
 
 
 
-        /* ==============================
-           錯誤文字
-           ============================== */
+        /* =================================================
+           錯誤訊息
+           ================================================= */
 
         function showError(message) {
 
@@ -671,17 +1054,22 @@
 
 
 
-        /* ==============================
-           找植物控制節點
-           ============================== */
+        /* =================================================
+           尋找植物 StemRig
+           ================================================= */
 
         function collectStemRigs() {
 
           const model =
-            modelEl.getObject3D("mesh");
+            modelEl.getObject3D(
+              "mesh"
+            );
+
 
           if (!model) {
+
             return;
+
           }
 
 
@@ -689,21 +1077,27 @@
 
 
           model.traverse(
-            function (object) {
+            object => {
 
-              if (
+              const isStem =
                 object.name.startsWith(
                   "StemRig_"
-                ) ||
+                );
 
+              const isYoungStem =
                 object.name.startsWith(
                   "YoungStemRig_"
-                )
+                );
+
+
+              if (
+                isStem ||
+                isYoungStem
               ) {
 
                 stemRigs.push({
 
-                  object: object,
+                  object,
 
                   baseX:
                     object.rotation.x,
@@ -734,7 +1128,7 @@
 
 
           console.log(
-            "找到植物控制節點：",
+            "Stem rigs:",
             stemRigs.length
           );
 
@@ -742,13 +1136,13 @@
 
 
 
-        /* ==============================
-           滑桿
-           ============================== */
+        /* =================================================
+           水流滑桿
+           ================================================= */
 
         flowSlider.addEventListener(
           "input",
-          function (event) {
+          event => {
 
             flowStrength =
               Number(
@@ -764,7 +1158,9 @@
 
         function updateFlowLabel() {
 
-          if (flowStrength === 0) {
+          if (
+            flowStrength === 0
+          ) {
 
             flowValue.textContent =
               "無水流";
@@ -800,9 +1196,9 @@
 
 
 
-        /* ==============================
+        /* =================================================
            植物水流動畫
-           ============================== */
+           ================================================= */
 
         function startPlantAnimation() {
 
@@ -818,7 +1214,10 @@
           function animate(now) {
 
             const time =
-              (now - startTime)
+              (
+                now -
+                animationStart
+              )
               / 1000;
 
 
@@ -842,7 +1241,7 @@
 
 
             stemRigs.forEach(
-              function (stem) {
+              stem => {
 
                 const wave =
                   Math.sin(
@@ -909,6 +1308,7 @@
         }
 
 
+
         updateFlowLabel();
 
       }
@@ -917,4 +1317,5 @@
   </script>
 
 </body>
+
 </html>
