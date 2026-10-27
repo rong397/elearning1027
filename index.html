@@ -1,14 +1,12 @@
 <!DOCTYPE html>
+<!-- BUILD: AR-V6-FINAL-STABLE-20261028 -->
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>沉水性植物 AR 觀察</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
-  <!-- 使用目前已在 iPhone 成功啟動的 MindAR 1.2.3 -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -16,7 +14,6 @@
 
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
@@ -24,9 +21,9 @@
       font-family: "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
       -webkit-user-select: none;
       user-select: none;
+      touch-action: none;
     }
 
-    /* MindAR 相機影像 */
     video {
       position: fixed !important;
       inset: 0 !important;
@@ -45,17 +42,15 @@
       inset: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
-      z-index: 1;
+      z-index: 1 !important;
       background: transparent !important;
     }
 
-    a-scene canvas,
-    .a-canvas {
+    a-scene canvas, .a-canvas {
       background: transparent !important;
-      touch-action: none;
+      touch-action: none !important;
     }
 
-    /* 開始畫面 */
     #startScreen {
       position: fixed;
       inset: 0;
@@ -70,9 +65,16 @@
     }
 
     #startScreen h1 {
-      margin: 0 0 14px;
+      margin: 0 0 8px;
       color: #20483c;
       font-size: 27px;
+    }
+
+    #version {
+      margin-bottom: 14px;
+      color: #176b57;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     #startScreen p {
@@ -90,14 +92,14 @@
       border: 0;
       border-radius: 14px;
       background: #176b57;
-      color: #fff;
+      color: white;
       font-size: 18px;
       font-weight: 700;
       -webkit-appearance: none;
       appearance: none;
     }
 
-    #startButton:disabled { opacity: 0.55; }
+    #startButton:disabled { opacity: .55; }
 
     #errorMessage {
       display: none;
@@ -113,7 +115,6 @@
       text-align: left;
     }
 
-    /* 上方提示 */
     #statusBox {
       position: fixed;
       top: calc(12px + env(safe-area-inset-top));
@@ -125,34 +126,32 @@
       z-index: 20000;
       display: none;
       border-radius: 14px;
-      background: rgba(15, 55, 46, 0.90);
+      background: rgba(15,55,46,.90);
       color: #fff;
       text-align: center;
       font-size: 15px;
       line-height: 1.45;
       pointer-events: none;
-      backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
     }
 
-    /* 操作提示 */
     #gestureHint {
       position: fixed;
-      top: calc(77px + env(safe-area-inset-top));
+      top: calc(76px + env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
       z-index: 19000;
       display: none;
       padding: 7px 12px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.58);
-      color: #fff;
+      background: rgba(0,0,0,.58);
+      color: white;
       font-size: 13px;
-      pointer-events: none;
       white-space: nowrap;
+      pointer-events: none;
     }
 
-    /* 下方控制區 */
     #controlPanel {
       position: fixed;
       left: 50%;
@@ -164,10 +163,11 @@
       z-index: 20000;
       display: none;
       border-radius: 18px;
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.24);
-      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.95);
+      box-shadow: 0 4px 20px rgba(0,0,0,.24);
       -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      touch-action: auto;
     }
 
     .controlTop {
@@ -175,7 +175,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
 
     .controlTitle {
@@ -193,15 +193,14 @@
       background: #e1f1e9;
       color: #176b57;
       font-size: 14px;
-      vertical-align: middle;
     }
 
     #resetButton {
       flex: 0 0 auto;
-      min-height: 42px;
+      min-height: 44px;
       padding: 8px 12px;
-      border: 1px solid #b8d2c8;
-      border-radius: 11px;
+      border: 1px solid #a9cbbd;
+      border-radius: 12px;
       background: #fff;
       color: #176b57;
       font-size: 14px;
@@ -212,9 +211,10 @@
 
     #flowSlider {
       width: 100%;
-      min-height: 36px;
+      min-height: 40px;
       margin: 0;
       accent-color: #16825f;
+      touch-action: auto;
     }
 
     .flowLabels {
@@ -230,13 +230,6 @@
       font-size: 13px;
       line-height: 1.45;
     }
-
-    @media (max-width: 380px) {
-      #statusBox { font-size: 14px; }
-      #gestureHint { font-size: 12px; }
-      .controlTitle { font-size: 15px; }
-      #resetButton { font-size: 13px; }
-    }
   </style>
 </head>
 
@@ -244,25 +237,17 @@
 
   <div id="startScreen">
     <h1>沉水性植物 AR 觀察</h1>
+    <div id="version">AR-V6 最終穩定版</div>
     <p>
       點擊「開始 AR」並允許相機權限，再將鏡頭對準沉水性植物圖卡。
-      辨識後可用手指旋轉與縮放 3D 水槽。
+      辨識後可旋轉、縮放模型並調整水流強度。
     </p>
-
-    <button id="startButton" type="button" disabled>
-      正在載入 3D 模型…
-    </button>
-
+    <button id="startButton" type="button" disabled>正在載入 3D 模型…</button>
     <div id="errorMessage"></div>
   </div>
 
-  <div id="statusBox">
-    正在啟動 AR……
-  </div>
-
-  <div id="gestureHint">
-    單指拖曳旋轉｜雙指縮放
-  </div>
+  <div id="statusBox">正在啟動 AR……</div>
+  <div id="gestureHint">單指拖曳旋轉｜雙指縮放</div>
 
   <div id="controlPanel">
     <div class="controlTop">
@@ -270,21 +255,10 @@
         🌊 水流強度
         <span id="flowValue">中等</span>
       </div>
-
-      <button id="resetButton" type="button">
-        ↺ 重設視角
-      </button>
+      <button id="resetButton" type="button">↺ 重設視角</button>
     </div>
 
-    <input
-      id="flowSlider"
-      type="range"
-      min="0"
-      max="100"
-      value="35"
-      step="1"
-      aria-label="水流強度"
-    >
+    <input id="flowSlider" type="range" min="0" max="100" value="40" step="1" aria-label="水流強度">
 
     <div class="flowLabels">
       <span>無水流</span>
@@ -293,7 +267,7 @@
     </div>
 
     <div class="hint">
-      拖動滑桿觀察水流變化；在模型區單指拖曳可旋轉，雙指可放大或縮小。
+      模型區單指拖曳可旋轉，雙指可放大或縮小；滑桿可改變水流強度。
     </div>
   </div>
 
@@ -325,29 +299,28 @@
     <a-assets timeout="30000">
       <a-asset-item
         id="plantModel"
-        src="./submerged_plant_tank_final.glb"
+        src="./submerged_plant_tank_final.glb?v=6"
         crossorigin="anonymous"
       ></a-asset-item>
     </a-assets>
 
-    <a-camera
-      position="0 0 0"
-      look-controls="enabled: false"
-    ></a-camera>
+    <!-- 確保 GLB 材質在手機上有足夠照明 -->
+    <a-light type="ambient" intensity="1.25"></a-light>
+    <a-light type="directional" intensity="0.75" position="1 2 2"></a-light>
 
-    <a-entity
-      id="target"
-      mindar-image-target="targetIndex: 0"
-    >
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
+
       <!--
-        Pivot 專門負責學生手勢旋轉／縮放。
-        模型本身維持 rotation 0 0 0，避免水槽底面朝向相機。
+        固定使用先前已證明能顯示模型的位置與尺寸。
+        不做任何自動包圍盒、重新置中或自動縮放。
       -->
       <a-entity
         id="modelPivot"
-        position="0 0 0.08"
-        rotation="-10 18 0"
-        scale="1 1 1"
+        position="0 0 0.12"
+        rotation="0 0 0"
+        scale="0.18 0.18 0.18"
       >
         <a-gltf-model
           id="tankModel"
@@ -357,8 +330,8 @@
           scale="1 1 1"
         ></a-gltf-model>
       </a-entity>
-    </a-entity>
 
+    </a-entity>
   </a-scene>
 
   <script>
@@ -367,7 +340,7 @@
       const scene = document.querySelector("#arScene");
       const target = document.querySelector("#target");
       const modelEl = document.querySelector("#tankModel");
-      const modelPivot = document.querySelector("#modelPivot");
+      const pivot = document.querySelector("#modelPivot");
 
       const startScreen = document.querySelector("#startScreen");
       const startButton = document.querySelector("#startButton");
@@ -380,32 +353,26 @@
       const flowValue = document.querySelector("#flowValue");
       const resetButton = document.querySelector("#resetButton");
 
+      const BASE_SCALE = 0.18;
+      const BASE_Z = 0.12;
+
       let arSystem = null;
-      let arReady = false;
       let modelReady = false;
       let targetVisible = false;
 
+      let yaw = 0;
+      let pitch = 0;
+      let zoom = 1;
+
+      let lastX = 0;
+      let lastY = 0;
+      let pinchStartDistance = 0;
+      let pinchStartZoom = 1;
+
       let stemRigs = [];
-      let flowStrength = 35;
-      let animationFrame = null;
+      let flowStrength = 40;
+      let animationFrame = 0;
       const animationStart = performance.now();
-
-      /* 學生操作狀態 */
-      const DEFAULT_PITCH = -10;
-      const DEFAULT_YAW = 18;
-
-      let pitch = DEFAULT_PITCH;
-      let yaw = DEFAULT_YAW;
-      let userScale = 1;
-
-      let lastTouchX = 0;
-      let lastTouchY = 0;
-      let lastPinchDistance = 0;
-      let pinchStartScale = 1;
-
-      /* ------------------------------
-         共用工具
-      ------------------------------ */
 
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
@@ -420,68 +387,72 @@
         errorMessage.style.display = "none";
       }
 
-      function setPivotTransform() {
-        modelPivot.object3D.rotation.set(
+      function applyView() {
+        pivot.object3D.position.set(0, 0, BASE_Z);
+
+        pivot.object3D.rotation.set(
           THREE.MathUtils.degToRad(pitch),
           THREE.MathUtils.degToRad(yaw),
           0
         );
 
-        modelPivot.object3D.scale.setScalar(userScale);
+        const s = BASE_SCALE * zoom;
+        pivot.object3D.scale.set(s, s, s);
       }
 
       function resetView() {
-        pitch = DEFAULT_PITCH;
-        yaw = DEFAULT_YAW;
-        userScale = 1;
-        setPivotTransform();
+        yaw = 0;
+        pitch = 0;
+        zoom = 1;
+        applyView();
       }
 
-      function touchDistance(t1, t2) {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.hypot(dx, dy);
-      }
-
-      function isUIElement(element) {
-        if (!element || !element.closest) return false;
-
-        return Boolean(
-          element.closest(
-            "#controlPanel, #startScreen, button, input"
-          )
+      function touchDistance(a, b) {
+        return Math.hypot(
+          a.clientX - b.clientX,
+          a.clientY - b.clientY
         );
       }
 
-      /* ------------------------------
-         Scene 初始化
-      ------------------------------ */
+      function isControl(targetElement) {
+        return Boolean(
+          targetElement &&
+          targetElement.closest &&
+          targetElement.closest("#controlPanel, #startScreen, button, input")
+        );
+      }
 
       scene.addEventListener("loaded", () => {
         arSystem = scene.systems["mindar-image-system"];
       });
 
-      /* ------------------------------
-         模型處理
-      ------------------------------ */
-
-      function prepareModel() {
+      /*
+        只做安全的模型清理。
+        不移動、不重新置中、不改模型總尺寸。
+      */
+      function prepareVisibleModel() {
         const root = modelEl.getObject3D("mesh");
-
         if (!root) return;
 
         stemRigs = [];
 
-        /*
-          1. 隱藏 Blender 預設／舊模型可能殘留的 Cube
-          2. 讓玻璃和水體不再遮住植物
-          3. 找出水草 StemRig
-        */
         root.traverse((object) => {
+          const name = (object.name || "").toLowerCase();
 
-          const objectName = (object.name || "").toLowerCase();
+          /* Blender 預設殘留 Cube 不參與 AR */
+          if (name === "cube") {
+            object.visible = false;
+            return;
+          }
 
-          if (objectName === "cube") {
+          /*
+            WaterBody 就是之前正面看到的大片灰色水面。
+            AR 中直接隱藏，讓學生能清楚看植物。
+          */
+          if (
+            name === "waterbody" ||
+            name.includes("waterbody")
+          ) {
             object.visible = false;
             return;
           }
@@ -496,144 +467,48 @@
               baseY: object.rotation.y,
               baseZ: object.rotation.z,
               phase: Math.random() * Math.PI * 2,
-              swayFactor: 0.8 + Math.random() * 0.5
+              swayFactor: 0.8 + Math.random() * 0.45
             });
           }
 
-          if (!object.isMesh || !object.material) return;
-
-          const materials = Array.isArray(object.material)
-            ? object.material
-            : [object.material];
-
-          const fixedMaterials = materials.map((originalMaterial) => {
-
-            const material = originalMaterial.clone();
-
-            const materialName =
-              (material.name || "").toLowerCase();
-
-            const tag =
-              `${objectName} ${materialName}`;
-
-            if (
-              tag.includes("glass") ||
-              tag.includes("glasswall")
-            ) {
-              material.transparent = true;
-              material.opacity = 0.16;
-              material.depthWrite = false;
-              material.side = THREE.DoubleSide;
-              material.needsUpdate = true;
-            }
-
-            if (
-              tag.includes("waterbody") ||
-              tag.includes("water_body") ||
-              tag === "water"
-            ) {
-              material.transparent = true;
-              material.opacity = 0.22;
-              material.depthWrite = false;
-              material.side = THREE.DoubleSide;
-              material.needsUpdate = true;
-            }
-
-            return material;
-          });
-
-          object.material = Array.isArray(object.material)
-            ? fixedMaterials
-            : fixedMaterials[0];
-        });
-
-        /*
-          自動把模型置中。
-          不需要再手動猜 position。
-        */
-        root.updateWorldMatrix(true, true);
-
-        const box = new THREE.Box3();
-        let hasGeometry = false;
-
-        root.traverse((object) => {
+          /*
+            玻璃保留，但強制半透明，避免遮住綠色植物。
+          */
           if (
-            !object.visible ||
-            !object.isMesh ||
-            !object.geometry
+            object.isMesh &&
+            name.includes("glass")
           ) {
-            return;
-          }
+            const sourceMaterials =
+              Array.isArray(object.material)
+                ? object.material
+                : [object.material];
 
-          if (!object.geometry.boundingBox) {
-            object.geometry.computeBoundingBox();
-          }
+            const materials = sourceMaterials.map((source) => {
+              const mat = source.clone();
+              mat.transparent = true;
+              mat.opacity = 0.16;
+              mat.depthWrite = false;
+              mat.side = THREE.DoubleSide;
+              mat.needsUpdate = true;
+              return mat;
+            });
 
-          if (!object.geometry.boundingBox) return;
-
-          const partBox =
-            object.geometry.boundingBox
-              .clone()
-              .applyMatrix4(object.matrixWorld);
-
-          if (!hasGeometry) {
-            box.copy(partBox);
-            hasGeometry = true;
-          } else {
-            box.union(partBox);
+            object.material =
+              Array.isArray(object.material)
+                ? materials
+                : materials[0];
           }
         });
-
-        if (hasGeometry) {
-          const centerWorld =
-            box.getCenter(new THREE.Vector3());
-
-          const size =
-            box.getSize(new THREE.Vector3());
-
-          /*
-            把世界中心換成 root 父層的局部座標，
-            再將 glTF root 移至 entity 原點。
-          */
-          const centerLocal =
-            root.parent.worldToLocal(
-              centerWorld.clone()
-            );
-
-          root.position.sub(centerLocal);
-
-          /*
-            依 MindAR 圖卡寬度=1 自動縮放：
-            水槽約佔圖卡寬 78%、高 58%。
-          */
-          const widthScale =
-            0.78 / Math.max(size.x, 0.001);
-
-          const heightScale =
-            0.58 / Math.max(size.y, 0.001);
-
-          const fitScale =
-            clamp(
-              Math.min(widthScale, heightScale),
-              0.03,
-              0.30
-            );
-
-          modelEl.object3D.scale.setScalar(fitScale);
-        } else {
-          /* 極端情況下的安全備援 */
-          modelEl.object3D.scale.setScalar(0.12);
-        }
 
         resetView();
 
-        console.log("Stem rigs:", stemRigs.length);
+        console.log("AR V6 model loaded");
+        console.log("StemRig count:", stemRigs.length);
       }
 
       modelEl.addEventListener("model-loaded", () => {
         modelReady = true;
-
-        prepareModel();
+        prepareVisibleModel();
         startPlantAnimation();
 
         startButton.disabled = false;
@@ -641,23 +516,14 @@
       });
 
       modelEl.addEventListener("model-error", (event) => {
-        console.error("GLB model error:", event);
-
+        console.error("model-error", event);
         startButton.disabled = true;
         startButton.textContent = "3D 模型載入失敗";
-
-        showError(
-          "3D 模型無法載入。請確認 submerged_plant_tank_final.glb、targets.mind 與 index.html 位於 GitHub Repository 同一層。"
-        );
+        showError("3D 模型無法載入，請重新整理頁面再試。");
       });
-
-      /* ------------------------------
-         啟動 MindAR
-      ------------------------------ */
 
       startButton.addEventListener("click", () => {
         hideError();
-
         startButton.disabled = true;
         startButton.textContent = "正在啟動相機…";
 
@@ -668,10 +534,7 @@
         if (!arSystem) {
           startButton.disabled = false;
           startButton.textContent = "重新嘗試";
-
-          showError(
-            "MindAR 尚未初始化完成。請重新整理頁面後再試。"
-          );
+          showError("AR 系統尚未初始化完成，請重新整理後再試。");
           return;
         }
 
@@ -681,57 +544,40 @@
         try {
           arSystem.start();
         } catch (error) {
-          console.error("MindAR start error:", error);
-
+          console.error(error);
           startButton.disabled = false;
           startButton.textContent = "重新嘗試";
-
-          showError(
-            "AR 啟動失敗：" +
-            (error.message || "未知錯誤")
-          );
+          showError("AR 啟動失敗：" + (error.message || "未知錯誤"));
         }
       });
 
       scene.addEventListener("arReady", () => {
-        arReady = true;
-
         forceCameraVideoVisible();
 
         startScreen.style.display = "none";
         statusBox.style.display = "block";
-        statusBox.textContent =
-          "相機已啟動！請將鏡頭對準完整圖卡。";
+        statusBox.textContent = "相機已啟動！請將鏡頭對準完整圖卡。";
       });
 
       scene.addEventListener("arError", (event) => {
-        console.error("MindAR arError:", event);
-
-        arReady = false;
+        console.error("arError", event);
 
         startScreen.style.display = "flex";
         startButton.disabled = false;
         startButton.textContent = "重新嘗試";
         statusBox.style.display = "none";
 
-        showError(
-          "相機權限已允許，但 AR 無法初始化。請重新整理頁面後再試。"
-        );
+        showError("AR 相機無法初始化，請重新整理頁面後再試。");
       });
 
-      /*
-        iPhone Safari：保留已成功的 video 顯示修正。
-      */
+      /* 保留目前已在 iPhone 成功的相機顯示處理 */
       function forceCameraVideoVisible() {
-        let attempts = 0;
+        let tries = 0;
 
         const timer = setInterval(() => {
-          attempts += 1;
+          tries += 1;
 
-          const videos =
-            document.querySelectorAll("video");
-
-          videos.forEach((video) => {
+          document.querySelectorAll("video").forEach((video) => {
             video.setAttribute("playsinline", "");
             video.setAttribute("webkit-playsinline", "");
             video.setAttribute("autoplay", "");
@@ -747,202 +593,108 @@
             video.style.opacity = "1";
             video.style.zIndex = "0";
 
-            const promise = video.play();
-
-            if (
-              promise &&
-              typeof promise.catch === "function"
-            ) {
-              promise.catch(() => {});
+            const p = video.play();
+            if (p && typeof p.catch === "function") {
+              p.catch(() => {});
             }
           });
 
-          if (attempts >= 20) {
-            clearInterval(timer);
-          }
+          if (tries >= 20) clearInterval(timer);
         }, 250);
       }
-
-      /* ------------------------------
-         圖卡辨識
-      ------------------------------ */
 
       target.addEventListener("targetFound", () => {
         targetVisible = true;
 
         statusBox.textContent =
-          "✅ 已辨識圖卡！可旋轉模型並調整水流。";
+          "✅ 已辨識圖卡！可旋轉、縮放模型並調整水流。";
 
         if (modelReady) {
           controlPanel.style.display = "block";
           gestureHint.style.display = "block";
         }
+
+        /* 每次重新辨識都確保模型可見 */
+        pivot.object3D.visible = true;
+        modelEl.object3D.visible = true;
       });
 
       target.addEventListener("targetLost", () => {
         targetVisible = false;
-
-        statusBox.textContent =
-          "請將鏡頭重新對準完整圖卡。";
-
+        statusBox.textContent = "請將鏡頭重新對準完整圖卡。";
         controlPanel.style.display = "none";
         gestureHint.style.display = "none";
       });
 
-      /* ------------------------------
-         旋轉 / 縮放手勢
-      ------------------------------ */
+      /* -----------------------------
+         手機：單指旋轉、雙指縮放
+      ----------------------------- */
 
-      document.addEventListener(
-        "touchstart",
-        (event) => {
-          if (
-            !targetVisible ||
-            isUIElement(event.target)
-          ) {
-            return;
-          }
+      document.addEventListener("touchstart", (event) => {
+        if (!targetVisible || isControl(event.target)) return;
 
-          if (event.touches.length === 1) {
-            lastTouchX = event.touches[0].clientX;
-            lastTouchY = event.touches[0].clientY;
-          }
-
-          if (event.touches.length === 2) {
-            lastPinchDistance =
-              touchDistance(
-                event.touches[0],
-                event.touches[1]
-              );
-
-            pinchStartScale = userScale;
-          }
-        },
-        { passive: false }
-      );
-
-      document.addEventListener(
-        "touchmove",
-        (event) => {
-          if (
-            !targetVisible ||
-            isUIElement(event.target)
-          ) {
-            return;
-          }
-
-          if (event.touches.length === 1) {
-            event.preventDefault();
-
-            const x = event.touches[0].clientX;
-            const y = event.touches[0].clientY;
-
-            const dx = x - lastTouchX;
-            const dy = y - lastTouchY;
-
-            yaw += dx * 0.35;
-            pitch += dy * 0.25;
-
-            pitch = clamp(pitch, -45, 45);
-
-            lastTouchX = x;
-            lastTouchY = y;
-
-            setPivotTransform();
-          }
-
-          if (
-            event.touches.length === 2 &&
-            lastPinchDistance > 0
-          ) {
-            event.preventDefault();
-
-            const distance =
-              touchDistance(
-                event.touches[0],
-                event.touches[1]
-              );
-
-            const ratio =
-              distance / lastPinchDistance;
-
-            userScale =
-              clamp(
-                pinchStartScale * ratio,
-                0.65,
-                1.65
-              );
-
-            setPivotTransform();
-          }
-        },
-        { passive: false }
-      );
-
-      document.addEventListener(
-        "touchend",
-        () => {
-          lastPinchDistance = 0;
-        },
-        { passive: true }
-      );
-
-      resetButton.addEventListener(
-        "click",
-        resetView
-      );
-
-      /* 桌機測試也可以滑鼠旋轉 */
-      let mouseDragging = false;
-      let mouseX = 0;
-      let mouseY = 0;
-
-      document.addEventListener("pointerdown", (event) => {
-        if (
-          event.pointerType !== "mouse" ||
-          !targetVisible ||
-          isUIElement(event.target)
-        ) {
-          return;
+        if (event.touches.length === 1) {
+          lastX = event.touches[0].clientX;
+          lastY = event.touches[0].clientY;
+        } else if (event.touches.length === 2) {
+          pinchStartDistance =
+            touchDistance(event.touches[0], event.touches[1]);
+          pinchStartZoom = zoom;
         }
+      }, { passive: false });
 
-        mouseDragging = true;
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-      });
+      document.addEventListener("touchmove", (event) => {
+        if (!targetVisible || isControl(event.target)) return;
 
-      document.addEventListener("pointermove", (event) => {
-        if (!mouseDragging) return;
+        if (event.touches.length === 1) {
+          event.preventDefault();
 
-        const dx = event.clientX - mouseX;
-        const dy = event.clientY - mouseY;
+          const x = event.touches[0].clientX;
+          const y = event.touches[0].clientY;
 
-        yaw += dx * 0.35;
-        pitch =
-          clamp(
-            pitch + dy * 0.25,
-            -45,
-            45
+          yaw += (x - lastX) * 0.38;
+          pitch = clamp(
+            pitch + (y - lastY) * 0.25,
+            -40,
+            40
           );
 
-        mouseX = event.clientX;
-        mouseY = event.clientY;
+          lastX = x;
+          lastY = y;
+          applyView();
 
-        setPivotTransform();
-      });
+        } else if (
+          event.touches.length === 2 &&
+          pinchStartDistance > 0
+        ) {
+          event.preventDefault();
 
-      document.addEventListener("pointerup", () => {
-        mouseDragging = false;
-      });
+          const distance =
+            touchDistance(event.touches[0], event.touches[1]);
 
-      /* ------------------------------
-         水流控制
-      ------------------------------ */
+          zoom = clamp(
+            pinchStartZoom *
+            (distance / pinchStartDistance),
+            0.60,
+            1.80
+          );
+
+          applyView();
+        }
+      }, { passive: false });
+
+      document.addEventListener("touchend", () => {
+        pinchStartDistance = 0;
+      }, { passive: true });
+
+      resetButton.addEventListener("click", resetView);
+
+      /* -----------------------------
+         水流
+      ----------------------------- */
 
       flowSlider.addEventListener("input", (event) => {
-        flowStrength =
-          Number(event.target.value);
-
+        flowStrength = Number(event.target.value);
         updateFlowLabel();
       });
 
@@ -959,53 +711,38 @@
       }
 
       function startPlantAnimation() {
-        if (animationFrame) {
-          cancelAnimationFrame(animationFrame);
-        }
+        if (animationFrame) cancelAnimationFrame(animationFrame);
 
         function animate(now) {
-          const time =
-            (now - animationStart) / 1000;
+          const t = (now - animationStart) / 1000;
+          const strength = flowStrength / 100;
 
-          const normalized =
-            flowStrength / 100;
+          const tilt =
+            strength * THREE.MathUtils.degToRad(15);
 
-          const baseTilt =
-            normalized *
-            THREE.MathUtils.degToRad(15);
-
-          const swayAmount =
-            normalized *
-            THREE.MathUtils.degToRad(7);
+          const sway =
+            strength * THREE.MathUtils.degToRad(7);
 
           stemRigs.forEach((stem) => {
-            const wave =
-              Math.sin(
-                time *
-                (1.1 + normalized * 1.5) +
-                stem.phase
-              );
+            const wave = Math.sin(
+              t * (1.1 + strength * 1.5) +
+              stem.phase
+            );
 
             stem.object.rotation.z =
               stem.baseZ -
-              baseTilt * stem.swayFactor +
-              wave *
-              swayAmount *
-              stem.swayFactor;
+              tilt * stem.swayFactor +
+              wave * sway * stem.swayFactor;
 
             stem.object.rotation.x =
               stem.baseX +
-              wave *
-              swayAmount *
-              0.28;
+              wave * sway * 0.28;
           });
 
-          animationFrame =
-            requestAnimationFrame(animate);
+          animationFrame = requestAnimationFrame(animate);
         }
 
-        animationFrame =
-          requestAnimationFrame(animate);
+        animationFrame = requestAnimationFrame(animate);
       }
 
       updateFlowLabel();
