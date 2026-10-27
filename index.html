@@ -1,646 +1,1005 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,viewport-fit=cover"
->
+  <meta charset="UTF-8">
 
-<title>浮萍與水位 AR 實驗</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
 
-<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <title>沉水性植物 AR 觀察</title>
 
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-<style>
-  * {
-    box-sizing: border-box;
-  }
+  <!-- MindAR -->
+  <script
+    src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js">
+  </script>
 
-  html,
-  body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-    background: transparent;
-    font-family:
-      "Microsoft JhengHei",
-      sans-serif;
-  }
+  <!-- A-Frame -->
+  <script
+    src="https://aframe.io/releases/1.5.0/aframe.min.js">
+  </script>
 
-  [hidden] {
-    display: none !important;
-  }
+  <!-- MindAR A-Frame -->
+  <script
+    src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js">
+  </script>
 
-  .panel {
-    position: fixed;
-    z-index: 10;
-    left: 10px;
-    right: 10px;
-    max-width: 480px;
-    margin: auto;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 14px;
-    border-radius: 16px;
-    box-shadow: 0 4px 22px #0002;
-  }
 
-  #top {
-    top: max(10px, env(safe-area-inset-top));
-  }
+  <style>
 
-  #bottom {
-    bottom: max(10px, env(safe-area-inset-bottom));
-  }
+    html,
+    body {
 
-  h1 {
-    font-size: 19px;
-    color: #155744;
-    margin: 0 0 7px;
-  }
+      margin: 0;
+      padding: 0;
 
-  p {
-    font-size: 14px;
-    line-height: 1.6;
-    margin: 6px 0;
-  }
+      width: 100%;
+      height: 100%;
 
-  button {
-    background: #176b57;
-    color: white;
-    border: 0;
-    border-radius: 9px;
-    padding: 11px 13px;
-    font: inherit;
-    touch-action: manipulation;
-  }
+      overflow: hidden;
 
-  button:disabled {
-    background: #888;
-  }
+      font-family:
+        "Microsoft JhengHei",
+        "PingFang TC",
+        Arial,
+        sans-serif;
 
-  #start {
-    margin-top: 10px;
-  }
+      background: #000;
+    }
 
-  .row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
 
-  label {
-    font-weight: bold;
-    color: #155744;
-  }
+    /* ==========================================
+       上方提示
+       ========================================== */
 
-  input[type="range"] {
-    width: 100%;
-    height: 38px;
-    accent-color: #176b57;
-    touch-action: pan-x;
-  }
+    #statusBox {
 
-  .note {
-    font-size: 12px;
-    color: #666;
-  }
+      position: fixed;
 
-  .row button {
-    flex: 1;
-  }
+      top: 18px;
+      left: 50%;
 
-  #result {
-    min-height: 42px;
-  }
+      transform: translateX(-50%);
 
-  #levelValue {
-    font-weight: bold;
-  }
+      width: calc(100% - 36px);
+      max-width: 500px;
 
-  #status {
-    overflow-wrap: anywhere;
-  }
-</style>
+      padding: 12px 16px;
 
-<script>
-AFRAME.registerComponent('tank-interaction', {
-  init: function () {
-    this.ready = false;
-    this.depth = 0.50;
-    this.targetDepth = 0.50;
+      border-radius: 14px;
 
-    this.el.addEventListener('model-loaded', () => {
-      try {
-        const mesh = this.el.getObject3D('mesh');
+      background:
+        rgba(15, 55, 46, 0.88);
 
-        this.body = mesh.getObjectByName('WaterBody');
+      color: #ffffff;
 
-        this.surface = mesh.getObjectByName(
-          'WaterSurface'
-        );
+      text-align: center;
 
-        this.plant = mesh.getObjectByName(
-          'DuckweedRoot'
-        );
+      font-size: 16px;
+      line-height: 1.5;
 
-        const tank = mesh.getObjectByName('TankRoot');
+      z-index: 10000;
 
-        if (
-          !this.body ||
-          !this.surface ||
-          !this.plant ||
-          !tank
-        ) {
-          throw new Error(
-            '模型缺少互動物件，請使用本次腳本匯出的 ' +
-            'duckweed_tank.glb。'
-          );
-        }
+      pointer-events: none;
 
-        this.base = Number(
-          tank.userData.water_base ?? 0.12
-        );
+      backdrop-filter: blur(8px);
+    }
 
-        this.minDepth = Number(
-          tank.userData.water_min_depth ?? 0.25
-        );
 
-        this.maxDepth = Number(
-          tank.userData.water_max_depth ?? 0.80
-        );
+    /* ==========================================
+       下方控制區
+       ========================================== */
 
-        // Blender 匯出時已轉為 Y-up。
-        // 水深與浮萍高度皆沿 GLB 的 Y 軸改變。
-        mesh.traverse(obj => {
-          if (!obj.isMesh) return;
+    #controlPanel {
 
-          const materials = Array.isArray(obj.material)
-            ? obj.material
-            : [obj.material];
+      position: fixed;
 
-          for (const mat of materials) {
-            if (!mat) continue;
+      left: 50%;
+      bottom: 22px;
 
-            const alpha = {
-              TankGlass: 0.10,
-              WaterVolume: 0.13,
-              WaterTop: 0.35
-            }[mat.name];
+      transform: translateX(-50%);
 
-            if (alpha !== undefined) {
-              mat.transparent = true;
-              mat.opacity = alpha;
-              mat.needsUpdate = true;
-            }
+      width: calc(100% - 32px);
+      max-width: 520px;
 
-            if (mat.transparent || mat.opacity < 1) {
-              mat.depthWrite = false;
-              mat.side = AFRAME.THREE.DoubleSide;
+      padding: 16px 18px;
 
-              obj.renderOrder = mat.name.includes(
-                'TankGlass'
-              ) ? 3 : 2;
-            }
-          }
-        });
+      background:
+        rgba(255, 255, 255, 0.94);
 
-        this.ready = true;
+      border-radius: 18px;
 
-        this.setLevel(50);
+      z-index: 10000;
 
-        this.depth = this.targetDepth;
-        this.applyDepth();
+      box-shadow:
+        0 4px 20px
+        rgba(0, 0, 0, 0.25);
 
-        this.el.dataset.tankReady = 'true';
+      display: none;
+    }
 
-        this.el.emit('tank-ready', {}, false);
 
-      } catch (error) {
-        console.error(error);
+    .controlTitle {
 
-        this.el.dataset.tankError = error.message;
+      display: flex;
 
-        this.el.emit(
-          'tank-error',
-          { message: error.message },
-          false
-        );
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 12px;
+
+      margin-bottom: 10px;
+
+      color: #20483c;
+
+      font-size: 17px;
+
+      font-weight: bold;
+    }
+
+
+    #flowValue {
+
+      padding: 4px 10px;
+
+      border-radius: 20px;
+
+      background: #e1f1e9;
+
+      color: #176b57;
+
+      font-size: 14px;
+    }
+
+
+    input[type="range"] {
+
+      width: 100%;
+
+      height: 34px;
+
+      accent-color: #16825f;
+
+      cursor: pointer;
+    }
+
+
+    .flowLabels {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      color: #61736c;
+
+      font-size: 13px;
+
+      margin-top: 2px;
+    }
+
+
+    .hint {
+
+      margin-top: 10px;
+
+      color: #5a6d65;
+
+      font-size: 13px;
+
+      line-height: 1.5;
+    }
+
+
+    /* ==========================================
+       載入畫面
+       ========================================== */
+
+    #loading {
+
+      position: fixed;
+
+      inset: 0;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 14px;
+
+      background: #edf5f1;
+
+      color: #244238;
+
+      z-index: 20000;
+    }
+
+
+    .spinner {
+
+      width: 46px;
+      height: 46px;
+
+      border:
+        5px solid #c9ddd5;
+
+      border-top-color:
+        #176b57;
+
+      border-radius: 50%;
+
+      animation:
+        spin 0.9s linear infinite;
+    }
+
+
+    @keyframes spin {
+
+      to {
+
+        transform: rotate(360deg);
+
       }
-    });
-  },
 
-  setLevel: function (percent) {
-    if (!this.ready) return;
+    }
 
-    const p = Math.min(
-      100,
-      Math.max(0, Number(percent))
-    ) / 100;
 
-    this.targetDepth =
-      this.minDepth +
-      (this.maxDepth - this.minDepth) * p;
-  },
+    #loadingText {
 
-  applyDepth: function () {
-    // 改變水體高度，底部位置保持固定。
-    this.body.position.y = this.base;
-    this.body.scale.y = this.depth;
+      font-size: 17px;
 
-    // 水面位於水體最上方。
-    this.surface.position.y =
-      this.base + this.depth;
+      text-align: center;
 
-    // 浮萍原點位於水面。
-    // 葉狀體與根跟隨整株升降。
-    this.plant.position.y =
-      this.base + this.depth;
-  },
+      padding: 0 20px;
 
-  tick: function (time, delta) {
-    if (!this.ready) return;
+      line-height: 1.6;
+    }
 
-    // 平滑升降，避免水位瞬間跳動。
-    const alpha = 1 - Math.exp(
-      -Math.min(delta || 16, 100) / 140
-    );
 
-    this.depth +=
-      (this.targetDepth - this.depth) * alpha;
+    @media (max-width: 480px) {
 
-    this.applyDepth();
-  }
-});
-</script>
+      #statusBox {
+
+        font-size: 15px;
+
+      }
+
+
+      #controlPanel {
+
+        padding: 14px;
+
+      }
+
+
+      .controlTitle {
+
+        font-size: 16px;
+
+      }
+
+    }
+
+  </style>
+
 </head>
+
+
 
 <body>
 
-<div id="top" class="panel">
-  <h1>浮萍與水位 AR 實驗</h1>
 
-  <p
-    id="status"
-    role="status"
-    aria-live="polite"
-  >
-    正在載入立體水槽……
-  </p>
+  <!-- ==========================================
+       載入提示
+       ========================================== -->
 
-  <button id="start" disabled>
-    載入中
-  </button>
+  <div id="loading">
 
-  <p class="note">
-    浮萍外形與尺寸為教學放大示意；
-    水位升降為互動模擬。
-  </p>
-</div>
+    <div class="spinner"></div>
 
-<div id="bottom" class="panel" hidden>
+    <div id="loadingText">
 
-  <div class="row">
-    <label for="level">調整水位</label>
-    <span id="levelValue">50%</span>
+      正在準備 AR 模型……<br>
+      第一次載入可能需要幾秒鐘。
+
+    </div>
+
   </div>
 
-  <input
-    id="level"
-    type="range"
-    min="0"
-    max="100"
-    value="50"
-    step="1"
-    aria-label="水位，相對於可調整範圍的百分比"
-  >
 
-  <div class="row">
-    <button data-level="0">低水位</button>
-    <button data-level="50">中水位</button>
-    <button data-level="100">高水位</button>
+
+  <!-- ==========================================
+       上方提示
+       ========================================== -->
+
+  <div id="statusBox">
+
+    請允許使用相機，並將鏡頭對準老師指定的完整圖卡。
+
   </div>
 
-  <p id="result">
-    試著降低水位，觀察浮萍的位置。
-  </p>
 
-  <div class="row">
-    <button id="rotate">旋轉</button>
-    <button id="view">換角度</button>
-    <button id="reset">重設</button>
-  </div>
 
-  <p class="note">
-    觀察：浮萍是否一直位於水面？
-    根是否固定在槽底？
-  </p>
-</div>
+  <!-- ==========================================
+       水流控制
+       ========================================== -->
 
-<a-scene
-  mindar-image="
-    imageTargetSrc: ./targets.mind;
-    autoStart: false;
-    uiLoading: no;
-    uiScanning: no;
-    uiError: no;
-  "
-  renderer="
-    colorManagement: true;
-    alpha: true;
-  "
-  vr-mode-ui="enabled: false"
-  device-orientation-permission-ui="enabled: false"
-  loading-screen="enabled: false"
->
-  <a-camera
-    position="0 0 0"
-    look-controls="enabled: false"
-  ></a-camera>
+  <div id="controlPanel">
 
-  <a-entity
-    light="type: ambient; intensity: 1.1"
-  ></a-entity>
 
-  <a-entity
-    light="type: directional; intensity: 1.2"
-    position="1 2 3"
-  ></a-entity>
+    <div class="controlTitle">
 
-  <a-entity
-    id="target"
-    mindar-image-target="targetIndex: 0"
-  >
-    <a-entity
-      id="spin"
-      position="0 -0.1 0.02"
+      <span>
+        🌊 水流強度
+      </span>
+
+      <span id="flowValue">
+        中等
+      </span>
+
+    </div>
+
+
+    <input
+      id="flowSlider"
+      type="range"
+      min="0"
+      max="100"
+      value="35"
+      step="1"
+      aria-label="調整水流強度"
     >
-      <a-entity
-        id="tilt"
-        rotation="70 0 0"
+
+
+    <div class="flowLabels">
+
+      <span>
+        無水流
+      </span>
+
+      <span>
+        中等
+      </span>
+
+      <span>
+        強水流
+      </span>
+
+    </div>
+
+
+    <div class="hint">
+
+      拖動滑桿，觀察水流增強時，
+      沉水性植物的莖與葉如何隨水流擺動。
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ==========================================
+       MindAR Scene
+       ========================================== -->
+
+  <a-scene
+
+    id="arScene"
+
+    mindar-image="
+      imageTargetSrc: ./targets.mind;
+      autoStart: true;
+      filterMinCF: 0.001;
+      filterBeta: 10;
+      warmupTolerance: 5;
+      missTolerance: 5;
+    "
+
+    color-space="sRGB"
+
+    renderer="
+      colorManagement: true;
+      physicallyCorrectLights: true;
+      antialias: true;
+    "
+
+    vr-mode-ui="enabled: false"
+
+    device-orientation-permission-ui="enabled: false"
+
+    embedded
+
+  >
+
+
+
+    <!-- ======================================
+         模型資源
+         ====================================== -->
+
+    <a-assets
+      timeout="30000"
+    >
+
+
+      <a-asset-item
+
+        id="plantModel"
+
+        src="./submerged_plant_tank_final.glb"
+
+        crossorigin="anonymous"
+
       >
-        <a-entity
-          id="tank"
-          gltf-model="url(./duckweed_tank.glb)"
-          scale="0.52 0.52 0.52"
-          tank-interaction
-        ></a-entity>
-      </a-entity>
+      </a-asset-item>
+
+
+    </a-assets>
+
+
+
+    <!-- ======================================
+         AR Camera
+         ====================================== -->
+
+    <a-camera
+
+      position="0 0 0"
+
+      look-controls="enabled: false"
+
+      cursor="rayOrigin: mouse"
+
+    >
+    </a-camera>
+
+
+
+    <!-- ======================================
+         圖片辨識 Target
+         ====================================== -->
+
+    <a-entity
+
+      id="target"
+
+      mindar-image-target="targetIndex: 0"
+
+    >
+
+
+      <!--
+        模型大小：
+
+        你的水槽原始寬度大約是數個 Blender Unit，
+        這裡先縮到 0.18。
+
+        如果之後 AR 中太大：
+        改成 0.12
+
+        太小：
+        改成 0.22～0.25
+      -->
+
+      <a-gltf-model
+
+        id="tankModel"
+
+        src="#plantModel"
+
+        position="0 0 0.12"
+
+        rotation="90 0 0"
+
+        scale="0.18 0.18 0.18"
+
+      >
+      </a-gltf-model>
+
+
     </a-entity>
-  </a-entity>
-</a-scene>
 
-<script>
-const scene = document.querySelector('a-scene');
-const tank = document.querySelector('#tank');
 
-const status = document.querySelector('#status');
-const start = document.querySelector('#start');
-const bottom = document.querySelector('#bottom');
+  </a-scene>
 
-const level = document.querySelector('#level');
-const value = document.querySelector('#levelValue');
-const result = document.querySelector('#result');
 
-let sceneReady = Boolean(scene.hasLoaded);
-let modelReady = false;
 
-let failed = false;
-let starting = false;
-let running = false;
+  <script>
 
-let angle = 0;
-let viewIndex = 0;
+    // ==========================================
+    // DOM
+    // ==========================================
 
-const views = [70, 90, 40];
+    const scene =
+      document.querySelector('#arScene');
 
-function ready() {
-  if (failed || running || starting) return;
+    const target =
+      document.querySelector('#target');
 
-  if (sceneReady && modelReady) {
-    start.disabled = false;
-    start.textContent = '啟動 AR 鏡頭';
+    const modelEl =
+      document.querySelector('#tankModel');
 
-    status.textContent =
-      '水槽已載入。啟動鏡頭後，請掃描指定圖卡。';
-  }
-}
+    const loading =
+      document.querySelector('#loading');
 
-function fail(message) {
-  failed = true;
-  running = false;
-  starting = false;
+    const loadingText =
+      document.querySelector('#loadingText');
 
-  status.textContent = message;
+    const statusBox =
+      document.querySelector('#statusBox');
 
-  start.hidden = false;
-  start.disabled = true;
-  start.textContent = '請修正後重新整理';
+    const controlPanel =
+      document.querySelector('#controlPanel');
 
-  bottom.hidden = true;
+    const flowSlider =
+      document.querySelector('#flowSlider');
 
-  try {
-    scene.systems['mindar-image-system']?.stop();
-  } catch (error) {
-    console.warn(error);
-  }
-}
+    const flowValue =
+      document.querySelector('#flowValue');
 
-scene.addEventListener('loaded', () => {
-  sceneReady = true;
-  ready();
-});
 
-tank.addEventListener('tank-ready', () => {
-  modelReady = true;
-  ready();
-});
 
-tank.addEventListener('tank-error', event => {
-  fail(event.detail.message);
-});
+    // ==========================================
+    // Stem Rig 資料
+    // ==========================================
 
-tank.addEventListener('model-error', () => {
-  fail(
-    '水槽載入失敗，請確認 duckweed_tank.glb ' +
-    '已使用 Upload files 上傳至同一資料夾。'
-  );
-});
+    let stemRigs = [];
 
-if (tank.dataset.tankReady === 'true') {
-  modelReady = true;
-}
+    let flowStrength = 35;
 
-if (tank.dataset.tankError) {
-  fail(tank.dataset.tankError);
-}
+    let animationFrame = null;
 
-ready();
+    let startTime = performance.now();
 
-scene.addEventListener('arReady', () => {
-  if (failed) return;
+    let modelReady = false;
 
-  starting = false;
-  running = true;
 
-  start.hidden = true;
-  bottom.hidden = false;
 
-  status.textContent =
-    '請對準完整圖卡，辨識後拖動水位滑桿。';
-});
+    // ==========================================
+    // 儲存每株植物原始角度
+    // ==========================================
 
-scene.addEventListener('arError', () => {
-  fail(
-    '無法啟動鏡頭，請確認相機權限，' +
-    '以及 targets.mind 是否存在。'
-  );
-});
+    function collectStemRigs() {
 
-start.addEventListener('click', async () => {
-  if (
-    failed ||
-    starting ||
-    running ||
-    !modelReady ||
-    !sceneReady
-  ) {
-    return;
-  }
 
-  if (
-    !window.isSecureContext ||
-    !navigator.mediaDevices?.getUserMedia
-  ) {
-    status.textContent =
-      '請使用手機瀏覽器開啟 HTTPS 網址，' +
-      '並允許相機權限。';
+      const model =
+        modelEl.getObject3D('mesh');
 
-    return;
-  }
 
-  starting = true;
-  start.disabled = true;
-  start.textContent = '啟動中';
+      if (!model) {
 
-  status.textContent = '請允許網站使用相機……';
+        console.warn(
+          '找不到 GLB 模型。'
+        );
 
-  try {
-    await scene.systems['mindar-image-system'].start();
+        return;
 
-  } catch (error) {
-    console.error(error);
+      }
 
-    fail(
-      'AR 啟動失敗：請允許相機權限，' +
-      '並確認 targets.mind 已上傳。'
-    );
-  }
-});
 
-document.querySelector('#target')
-  .addEventListener('targetFound', () => {
-    if (!failed) {
-      status.textContent =
-        '辨識成功！改變水位，' +
-        '觀察浮萍與水面的相對位置。';
+      stemRigs = [];
+
+
+      model.traverse(object => {
+
+
+        const isMainStem =
+          object.name.startsWith(
+            'StemRig_'
+          );
+
+
+        const isYoungStem =
+          object.name.startsWith(
+            'YoungStemRig_'
+          );
+
+
+        if (
+          isMainStem ||
+          isYoungStem
+        ) {
+
+
+          stemRigs.push({
+
+            object: object,
+
+            baseX:
+              object.rotation.x,
+
+            baseY:
+              object.rotation.y,
+
+            baseZ:
+              object.rotation.z,
+
+            phase:
+              Math.random()
+              * Math.PI
+              * 2,
+
+            swayFactor:
+              0.8
+              +
+              Math.random()
+              * 0.5
+
+          });
+
+
+        }
+
+      });
+
+
+      console.log(
+        '找到植物控制節點：',
+        stemRigs.length
+      );
+
+
     }
-  });
 
-document.querySelector('#target')
-  .addEventListener('targetLost', () => {
-    if (running) {
-      status.textContent =
-        '圖卡離開鏡頭，請重新對準圖卡。';
+
+
+    // ==========================================
+    // 模型載入完成
+    // ==========================================
+
+    modelEl.addEventListener(
+      'model-loaded',
+      () => {
+
+
+        modelReady = true;
+
+
+        collectStemRigs();
+
+
+        loading.style.display =
+          'none';
+
+
+        statusBox.textContent =
+          'AR 已準備完成！請將鏡頭對準完整圖卡。';
+
+
+        startPlantAnimation();
+
+
+      }
+    );
+
+
+
+    // ==========================================
+    // 模型載入失敗
+    // ==========================================
+
+    modelEl.addEventListener(
+      'model-error',
+      event => {
+
+
+        loadingText.innerHTML =
+          '3D 模型載入失敗。<br>' +
+          '請確認 submerged_plant_tank_final.glb ' +
+          '已和 index.html 放在 GitHub 同一層。';
+
+
+        console.error(
+          'GLB model error:',
+          event
+        );
+
+
+      }
+    );
+
+
+
+    // ==========================================
+    // MindAR 找到目標
+    // ==========================================
+
+    target.addEventListener(
+      'targetFound',
+      () => {
+
+
+        statusBox.textContent =
+          '✅ 已辨識圖卡！請觀察沉水性植物。';
+
+
+        if (modelReady) {
+
+          controlPanel.style.display =
+            'block';
+
+        }
+
+
+      }
+    );
+
+
+
+    // ==========================================
+    // MindAR 失去目標
+    // ==========================================
+
+    target.addEventListener(
+      'targetLost',
+      () => {
+
+
+        statusBox.textContent =
+          '請將鏡頭重新對準完整圖卡。';
+
+
+        controlPanel.style.display =
+          'none';
+
+
+      }
+    );
+
+
+
+    // ==========================================
+    // 水流滑桿
+    // ==========================================
+
+    flowSlider.addEventListener(
+      'input',
+      event => {
+
+
+        flowStrength =
+          Number(
+            event.target.value
+          );
+
+
+        updateFlowLabel();
+
+
+      }
+    );
+
+
+
+    function updateFlowLabel() {
+
+
+      if (flowStrength === 0) {
+
+
+        flowValue.textContent =
+          '無水流';
+
+
+      }
+
+
+      else if (
+        flowStrength < 35
+      ) {
+
+
+        flowValue.textContent =
+          '微弱';
+
+
+      }
+
+
+      else if (
+        flowStrength < 70
+      ) {
+
+
+        flowValue.textContent =
+          '中等';
+
+
+      }
+
+
+      else {
+
+
+        flowValue.textContent =
+          '強';
+
+
+      }
+
+
     }
-  });
 
-function setLevel(percent) {
-  const p = Math.max(
-    0,
-    Math.min(100, Number(percent))
-  );
 
-  level.value = p;
-  value.textContent = p + '%';
 
-  tank.components['tank-interaction']?.setLevel(p);
+    // ==========================================
+    // 水流動畫
+    // ==========================================
 
-  if (p < 34) {
-    result.textContent =
-      '低水位：浮萍隨水面下降，根仍垂在水中。';
+    function startPlantAnimation() {
 
-  } else if (p > 66) {
-    result.textContent =
-      '高水位：浮萍隨水面上升，仍漂浮在水面。';
 
-  } else {
-    result.textContent =
-      '中水位：浮萍位在水面，根沒有固定在槽底。';
-  }
-}
+      if (animationFrame) {
 
-level.addEventListener('input', event => {
-  setLevel(event.target.value);
-});
+        cancelAnimationFrame(
+          animationFrame
+        );
 
-document.querySelectorAll('[data-level]')
-  .forEach(button => {
-    button.addEventListener('click', () => {
-      setLevel(button.dataset.level);
-    });
-  });
+      }
 
-document.querySelector('#rotate')
-  .addEventListener('click', () => {
-    angle = (angle + 30) % 360;
 
-    document.querySelector('#spin').setAttribute(
-      'rotation',
-      `0 0 ${angle}`
+      function animate(now) {
+
+
+        const time =
+          (now - startTime)
+          / 1000;
+
+
+        // 0 ~ 1
+        const normalized =
+          flowStrength
+          / 100;
+
+
+        /*
+          最大傾斜大約 18 度。
+
+          水流 = 0 時：
+          植物回到原始位置。
+
+          水流越大：
+          整體向同方向傾斜，
+          同時增加緩慢擺動。
+        */
+
+        const baseTilt =
+          normalized
+          * THREE.MathUtils.degToRad(
+            15
+          );
+
+
+        const swayAmount =
+          normalized
+          * THREE.MathUtils.degToRad(
+            7
+          );
+
+
+        stemRigs.forEach(
+          (stem, index) => {
+
+
+            const wave =
+
+              Math.sin(
+
+                time
+                * (
+                  1.1
+                  +
+                  normalized
+                  * 1.5
+                )
+
+                +
+
+                stem.phase
+
+              );
+
+
+            /*
+              Z：
+              模擬水流向側方推動。
+
+              X：
+              加入較小幅度前後擺動，
+              避免全部植物同步。
+            */
+
+            stem.object.rotation.z =
+
+              stem.baseZ
+
+              -
+
+              baseTilt
+
+              * stem.swayFactor
+
+              +
+
+              wave
+
+              * swayAmount
+
+              * stem.swayFactor;
+
+
+            stem.object.rotation.x =
+
+              stem.baseX
+
+              +
+
+              wave
+
+              * swayAmount
+
+              * 0.28;
+
+
+          }
+        );
+
+
+        animationFrame =
+          requestAnimationFrame(
+            animate
+          );
+
+
+      }
+
+
+      animationFrame =
+        requestAnimationFrame(
+          animate
+        );
+
+
+    }
+
+
+
+    // ==========================================
+    // Scene 載入提示
+    // ==========================================
+
+    scene.addEventListener(
+      'loaded',
+      () => {
+
+
+        loadingText.innerHTML =
+          'AR 系統已啟動。<br>' +
+          '正在載入 3D 水槽……';
+
+
+      }
     );
-  });
 
-document.querySelector('#view')
-  .addEventListener('click', () => {
-    viewIndex = (viewIndex + 1) % views.length;
 
-    document.querySelector('#tilt').setAttribute(
-      'rotation',
-      `${views[viewIndex]} 0 0`
-    );
-  });
 
-document.querySelector('#reset')
-  .addEventListener('click', () => {
-    angle = 0;
-    viewIndex = 0;
+    // ==========================================
+    // 初始化
+    // ==========================================
 
-    setLevel(50);
+    updateFlowLabel();
 
-    document.querySelector('#spin').setAttribute(
-      'rotation',
-      '0 0 0'
-    );
 
-    document.querySelector('#tilt').setAttribute(
-      'rotation',
-      '70 0 0'
-    );
-  });
+  </script>
 
-window.addEventListener('pagehide', () => {
-  try {
-    scene.systems['mindar-image-system']?.stop();
-
-  } catch (error) {
-    console.warn(error);
-  }
-});
-</script>
 
 </body>
+
 </html>
