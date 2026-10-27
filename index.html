@@ -484,150 +484,74 @@
            點擊開始 AR
            ============================== */
 
-        startButton.addEventListener(
-          "click",
-          async function () {
+       startButton.addEventListener(
+  "click",
+  async function () {
 
-            errorMessage.style.display =
-              "none";
+    errorMessage.style.display =
+      "none";
 
-            startButton.disabled =
-              true;
+    startButton.disabled =
+      true;
 
-            startButton.textContent =
-              "正在開啟相機…";
+    startButton.textContent =
+      "正在開啟相機…";
 
+    try {
 
-            try {
+      if (!arSystem) {
 
-              /*
-               * 先直接向瀏覽器要求相機權限。
-               * 對 Safari / iPhone 特別重要。
-               */
+        arSystem =
+          scene.systems[
+            "mindar-image-system"
+          ];
 
-              if (
-                !navigator.mediaDevices ||
-                !navigator.mediaDevices.getUserMedia
-              ) {
+      }
 
-                throw new Error(
-                  "此瀏覽器不支援相機存取。"
-                );
+      if (!arSystem) {
 
-              }
-
-
-              const testStream =
-                await navigator.mediaDevices
-                  .getUserMedia({
-
-                    audio: false,
-
-                    video: {
-
-                      facingMode: {
-                        ideal: "environment"
-                      }
-
-                    }
-
-                  });
-
-
-              /*
-               * 權限確認完成後，
-               * 釋放測試串流，
-               * 讓 MindAR 接管相機。
-               */
-
-              testStream
-                .getTracks()
-                .forEach(
-                  track => track.stop()
-                );
-
-
-              if (!arSystem) {
-
-                arSystem =
-                  scene.systems[
-                    "mindar-image-system"
-                  ];
-
-              }
-
-
-              if (!arSystem) {
-
-                throw new Error(
-                  "MindAR 尚未初始化。"
-                );
-
-              }
-
-
-              statusBox.style.display =
-                "block";
-
-              statusBox.textContent =
-                "正在啟動 AR 相機……";
-
-
-              await arSystem.start();
-
-
-            }
-
-            catch (error) {
-
-              console.error(
-                "Camera / AR error:",
-                error
-              );
-
-
-              startButton.disabled =
-                false;
-
-              startButton.textContent =
-                "重新嘗試";
-
-
-              if (
-                error.name ===
-                "NotAllowedError"
-              ) {
-
-                showError(
-                  "相機權限被拒絕。請到瀏覽器或手機設定中允許此網站使用相機，再重新整理頁面。"
-                );
-
-              }
-
-              else if (
-                error.name ===
-                "NotFoundError"
-              ) {
-
-                showError(
-                  "找不到可使用的相機。"
-                );
-
-              }
-
-              else {
-
-                showError(
-                  "相機無法啟動：" +
-                  error.message
-                );
-
-              }
-
-            }
-
-          }
+        throw new Error(
+          "MindAR 尚未初始化。"
         );
+
+      }
+
+      statusBox.style.display =
+        "block";
+
+      statusBox.textContent =
+        "正在啟動 AR 相機……";
+
+      /*
+       * 直接讓 MindAR 開啟相機。
+       * 不再先用 getUserMedia 開一次又關閉。
+       */
+      await arSystem.start();
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Camera / AR error:",
+        error
+      );
+
+      startButton.disabled =
+        false;
+
+      startButton.textContent =
+        "重新嘗試";
+
+      showError(
+        "相機無法啟動：" +
+        error.message
+      );
+
+    }
+
+  }
+);
 
 
 
